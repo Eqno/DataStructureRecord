@@ -42,12 +42,37 @@ class Num
 			num /= 10;
 		}
 	}
+	Num(Num *num)
+	{
+		symbol = num->symbol;
+		for (Node *p=num->head; p; p=p->nxt)
+		{
+			if (p == num->head) head = tail = new (Node) {p->val};
+			else
+			{
+				Node *node = new (Node) {p->val};
+				tail->nxt = node;
+				node->pre = tail;
+				tail = tail->nxt;
+			}
+		}
+	}
+	void formatNum()
+	{
+		if (head == tail) return ;
+		while (head->val == 0)
+		{
+			Node *d = head;
+			head = head->nxt;
+			head->pre = nullptr;
+			delete d;
+		}
+	}
 	bool readNum()
 	{
 		int c = 0, s = 0, f = 0;
-		while ((c=getchar()) != '\n')
+		while ((c=getchar())!='\n' && c!=' ')
 		{
-			
 			if (c == '-')
 			{
 				symbol = -1;
@@ -70,6 +95,7 @@ class Num
 			}
 			else f = 1;
 		}
+		formatNum();
 		return !f;
 	}
 	void printNum()
@@ -194,20 +220,60 @@ private:
 		}
 		if (f != 0)
 		{
-			Node *node;
+			Node *node = nullptr;
 			if (f == 1) node = new (Node) {1};
 			if (f == -1) node = new (Node) {-1};
 			head->pre = node;
 			node->nxt = head;
 			head = head->pre;
 		}
+		formatNum();
+	}
+	void delNum()
+	{
+		for (Node *p=head; p;)
+		{
+			Node *d = p;
+			p = p->nxt;
+			delete d;
+		}
+		symbol = 1;
+		head = tail = nullptr;
 	}
 public:
 	void addNum(Num *num)
 	{
-		if (symbol*num->symbol == -1)
-			if (cmpNum(num))
-
+		if (cmpNum(num))
+		{
+			Num *newNum = new Num(num);
+			newNum->calNum(this);
+			delNum();
+			symbol = newNum->symbol;
+			head = newNum->head;
+			tail = newNum->tail;
+			delete newNum;
+		}
+		else calNum(num);
+	}
+	void minusNum(Num *num)
+	{
+		num->symbol = -num->symbol;
+		addNum(num);
+		num->symbol = -num->symbol;
+	}
+	Num operator -(Num &num) { Num *res = new Num(this); res->minusNum(&num); return res; }
+	Num operator +(Num &num) { Num *res = new Num(this); res->addNum(&num); return res; }
+	bool operator ==(const Num *num)
+	{
+		if (symbol != num->symbol) return false;
+		Node *a = head, *b = num->head;
+		while (a && b)
+		{
+			if (a->val != b->val) return false;
+			a = a->nxt, b = b->nxt;
+		}
+		if (a || b) return false;
+		return true;
 	}
 };
 
@@ -232,7 +298,7 @@ int main()
 		printf("请输入整数！");
 		return 0;
 	}
-	a->addNum(b);
-	a->printNum();
+	Num c = *a - *b;
+	c.printNum();
 	return 0;
 }
